@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechnungsprüfer CHF - V1.1.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        main {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #667eea;
+            text-align: center;
+        }
+
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #764ba2;
+        }
+
+        #fileInfo {
+            color: #666;
+            font-size: 0.9em;
+            margin: 15px 0;
+            min-height: 20px;
+        }
+
+        .upload-btn {
+            padding: 12px 32px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+
+        .upload-btn:hover {
+            background: #218838;
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-badge.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .info-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .info-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .info-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .error-list, .warning-list, .check-list {
+            margin: 15px 0;
+        }
+
+        .error-item, .warning-item, .check-item {
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-left: 4px solid;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+
+        .error-item {
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
+        .warning-item {
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+
+        .check-item {
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        .pdf-preview {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .pdf-preview h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #pdfPreview {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .info-table {
+                font-size: 0.9em;
+            }
+            
+            .info-table th, .info-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🇨🇭 Rechnungsprüfer CHF</h1>
+            <p>Automatische Rechnungsprüfung mit AI-Unterstützung</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <h2>📄 PDF hochladen</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdfFile" accept=".pdf" />
+                    <label for="pdfFile" class="file-input-label">📁 PDF auswählen</label>
+                </div>
+                <div id="fileInfo"></div>
+                <button class="upload-btn" id="uploadBtn" disabled>🚀 Hochladen & Analysieren</button>
+                <div id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">Analysiere PDF...</p>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <div class="results-section" id="resultsSection">
+                <h3>✅ Analyse-Ergebnisse</h3>
+
+                <h4>Grunddaten</h4>
+                <table class="info-table">
+                    <tr>
+                        <th>Feld</th>
+                        <th>Wert</th>
+                    </tr>
+                    <tr>
+                        <td>Dateiname</td>
+                        <td id="filename"></td>
+                    </tr>
+                    <tr>
+                        <td>Rechnungsnummer</td>
+                        <td id="rechnungsnummer"></td>
+                    </tr>
+                    <tr>
+                        <td>Datum</td>
+                        <td id="datum"></td>
+                    </tr>
+                    <tr>
+                        <td>Lieferant</td>
+                        <td id="lieferant"></td>
+                    </tr>
+                    <tr>
+                        <td>Empfänger</td>
+                        <td id="empfaenger"></td>
+                    </tr>
+                </table>
+
+                <h4>Beträge</h4>
+                <table class="info-table">
+                    <tr>
+                        <th>Position</th>
+                        <th>Betrag</th>
+                    </tr>
+                    <tr>
+                        <td>Netto</td>
+                        <td id="summeNetto"></td>
+                    </tr>
+                    <tr>
+                        <td>MwSt</td>
+                        <td id="summeMwSt"></td>
+                    </tr>
+                    <tr>
+                        <td>Brutto</td>
+                        <td id="summeBrutto"></td>
+                    </tr>
+                </table>
+
+                <h4>Validierung</h4>
+                <div id="validationResults"></div>
+
+                <h4>Checkliste</h4>
+                <div class="check-list" id="checkList"></div>
+
+                <div class="pdf-preview">
+                    <h4>📋 PDF-Vorschau</h4>
+                    <embed id="pdfPreview" />
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const pdfFile = document.getElementById('pdfFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const resultsSection = document.getElementById('resultsSection');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+
+        pdfFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileInfo.textContent = `✓ ${e.target.files[0].name} (${(e.target.files[0].size / 1024).toFixed(2)} KB)`;
+                uploadBtn.disabled = false;
+            } else {
+                fileInfo.textContent = '';
+                uploadBtn.disabled = true;
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!pdfFile.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('pdf', pdfFile.files[0]);
+
+            loading.style.display = 'block';
+            progressBar.style.display = 'block';
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+            uploadBtn.disabled = true;
+
+            try {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        progressFill.textContent = Math.round(percentComplete) + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    loading.style.display = 'none';
+                    
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        displayResults(data);
+                        resultsSection.style.display = 'block';
+                    } else {
+                        const error = JSON.parse(xhr.responseText);
+                        showError(error.error || 'Fehler beim Hochladen');
+                    }
+                    uploadBtn.disabled = false;
+                });
+
+                xhr.addEventListener('error', () => {
+                    loading.style.display = 'none';
+                    showError('Netzwerkfehler beim Hochladen');
+                    uploadBtn.disabled = false;
+                });
+
+                xhr.open('POST', '/api/upload');
+                xhr.send(formData);
+            } catch (error) {
+                loading.style.display = 'none';
+                showError(error.message);
+                uploadBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('filename').textContent = data.filename;
+            document.getElementById('rechnungsnummer').textContent = data.invoice.rechnungsnummer || '❌ Nicht gefunden';
+            document.getElementById('datum').textContent = data.invoice.datum || '❌ Nicht gefunden';
+            document.getElementById('lieferant').textContent = data.invoice.lieferant || '❌ Nicht gefunden';
+            document.getElementById('empfaenger').textContent = data.invoice.empfaenger || '❌ Nicht gefunden';
+
+            document.getElementById('summeNetto').textContent = data.invoice.summeNetto ? `CHF ${data.invoice.summeNetto.toFixed(2).replace('.', ',')}` : '❌ Nicht gefunden';
+            document.getElementById('summeMwSt').textContent = data.invoice.summeMwSt ? `CHF ${data.invoice.summeMwSt.toFixed(2).replace('.', ',')}` : '❌ Nicht gefunden';
+            document.getElementById('summeBrutto').textContent = data.invoice.summeBrutto ? `CHF ${data.invoice.summeBrutto.toFixed(2).replace('.', ',')}` : '❌ Nicht gefunden';
+
+            // Validierungsergebnisse
+            const validationResults = document.getElementById('validationResults');
+            validationResults.innerHTML = '';
+
+            if (data.validation.errors.length > 0) {
+                validationResults.innerHTML += '<h5>❌ Fehler:</h5>';
+                const errorList = document.createElement('div');
+                errorList.className = 'error-list';
+                data.validation.errors.forEach(error => {
+                    const errorItem = document.createElement('div');
+                    errorItem.className = 'error-item';
+                    errorItem.textContent = error;
+                    errorList.appendChild(errorItem);
+                });
+                validationResults.appendChild(errorList);
+            }
+
+            if (data.validation.warnings.length > 0) {
+                validationResults.innerHTML += '<h5>⚠️ Warnungen:</h5>';
+                const warningList = document.createElement('div');
+                warningList.className = 'warning-list';
+                data.validation.warnings.forEach(warning => {
+                    const warningItem = document.createElement('div');
+                    warningItem.className = 'warning-item';
+                    warningItem.textContent = warning;
+                    warningList.appendChild(warningItem);
+                });
+                validationResults.appendChild(warningList);
+            }
+
+            if (data.validation.isValid) {
+                const successBadge = document.createElement('div');
+                successBadge.className = 'status-badge success';
+                successBadge.textContent = '✓ Rechnungsprüfung erfolgreich';
+                validationResults.appendChild(successBadge);
+            }
+
+            // Checkliste
+            const checkList = document.getElementById('checkList');
+            checkList.innerHTML = '';
+            data.validation.checks.forEach(check => {
+                const checkItem = document.createElement('div');
+                checkItem.className = 'check-item';
+                checkItem.innerHTML = `<strong>${check.check}:</strong> ${check.value}`;
+                checkList.appendChild(checkItem);
+            });
+
+            // PDF Preview
+            const pdfPreview = document.getElementById('pdfPreview');
+            pdfPreview.src = 'data:application/pdf;base64,' + data.pdfBase64;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = '❌ ' + message;
+            errorMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
