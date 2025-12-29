@@ -14,7 +14,7 @@
     "openai",
     "ollama"
   ],
-  "author": "WSF Erwachsenenbildung",
+  "author": "Gianini IT Consulting",
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.2",

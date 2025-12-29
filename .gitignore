@@ -4,6 +4,10 @@
 # Dependencies
 node_modules/
 
+# Documentation (lokal)
+*.md
+!README.md
+
 # Logs
 logs
 *.log
