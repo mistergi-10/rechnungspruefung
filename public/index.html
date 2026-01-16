@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rechnungsprüfer CHF - V1.1.0</title>
+    <title>Rechnungsprüfer CHF - V1.4.0</title>
     <style>
         * {
             margin: 0;
@@ -315,7 +315,8 @@
     <div class="container">
         <header>
             <h1>🇨🇭 Rechnungsprüfer CHF</h1>
-            <p>Automatische Rechnungsprüfung mit AI-Unterstützung</p>
+                <p>Automatische Rechnungsprüfung mit AI-Unterstützung</p>
+                <p id="appVersion" style="font-size:0.9em;opacity:0.85;margin-top:8px;"></p>
         </header>
 
         <main>
@@ -542,6 +543,18 @@
             errorMessage.textContent = '❌ ' + message;
             errorMessage.style.display = 'block';
         }
+    </script>
+    <script>
+        // Fetch current version from server and display it
+        (function(){
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const vEl = document.getElementById('appVersion');
+                    if (vEl && data.version) vEl.textContent = `Version ${data.version}`;
+                })
+                .catch(() => {});
+        })();
     </script>
 </body>
 </html>

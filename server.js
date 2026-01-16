@@ -10,6 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const aiModule = require('./ai-module');
 
+const pkg = require('./package.json');
+const VERSION = pkg.version;
+
 // AI-Hybrid-System initialisieren
 console.log('📌 AI-Hybrid-System wird initialisiert...');
 aiModule.initOpenAI();
@@ -410,8 +413,8 @@ app.get('/api/health', (req, res) => {
             </div>
             
             <div class="info-card">
-                <div class="info-label">Version</div>
-                <div class="info-value">1.1.0</div>
+              <div class="info-label">Version</div>
+              <div class="info-value">${VERSION}</div>
             </div>
             
             <div class="info-card">
@@ -603,8 +606,8 @@ app.get('/status', (req, res) => {
                 </div>
                 
                 <div class="status-card">
-                    <div class="status-label">Version</div>
-                    <div class="status-value">1.1.0</div>
+                  <div class="status-label">Version</div>
+                  <div class="status-value">${VERSION}</div>
                 </div>
                 
                 <div class="status-card">
@@ -706,8 +709,8 @@ app.get('/api/status', (req, res) => {
   const aiStatus = aiModule.getAIStatus();
   
   res.json({ 
-    application: 'Rechnungsprüfer CHF',
-    version: '1.1.0',
+  application: 'Rechnungsprüfer CHF',
+  version: VERSION,
     status: 'online',
     uptime: `${hours}h ${minutes}m ${seconds}s`,
     uptimeSeconds: uptime,
