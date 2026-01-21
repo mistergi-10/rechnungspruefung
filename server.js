@@ -197,6 +197,44 @@ function validateInvoice(invoice) {
 
 // API Endpoints
 
+async function parsePdfFile(file) {
+  const data = await pdfParse(file.buffer);
+  const text = data.text;
+
+  const pdfBase64 = file.buffer.toString('base64');
+  const qrCodeData = extractQRCodeFromText(text);
+
+  let qrCodeParsed = null;
+  if (qrCodeData) {
+    qrCodeParsed = await parseQRCodeWithAI(qrCodeData);
+  }
+
+  let invoice = await parseInvoiceWithAI(text);
+  if (!invoice) {
+    console.log('⚠️ AI-Parsing fehlgeschlagen, verwende Regex-Fallback...');
+    invoice = parseInvoiceText(text);
+  } else {
+    console.log('🤖 Erfolgreich mit KI-System geparst!');
+  }
+
+  if (qrCodeData) {
+    invoice.qrCode = qrCodeData;
+  }
+  if (qrCodeParsed) {
+    invoice.qrCodeParsed = qrCodeParsed;
+  }
+
+  const validation = validateInvoice(invoice);
+
+  return {
+    filename: file.originalname,
+    pdfBase64: pdfBase64,
+    pdfText: text.substring(0, 1000),
+    invoice,
+    validation
+  };
+}
+
 // PDF hochladen und parsen
 app.post('/api/upload', upload.single('pdf'), async (req, res) => {
   try {
@@ -204,48 +242,52 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
       return res.status(400).json({ error: 'Keine PDF-Datei hochgeladen' });
     }
 
-    const data = await pdfParse(req.file.buffer);
-    const text = data.text;
-    
-    const pdfBase64 = req.file.buffer.toString('base64');
-    const qrCodeData = extractQRCodeFromText(text);
-    
-    let qrCodeParsed = null;
-    if (qrCodeData) {
-      qrCodeParsed = await parseQRCodeWithAI(qrCodeData);
-    }
-
-    let invoice = await parseInvoiceWithAI(text);
-    
-    if (!invoice) {
-      console.log('⚠️ AI-Parsing fehlgeschlagen, verwende Regex-Fallback...');
-      invoice = parseInvoiceText(text);
-    } else {
-      console.log('🤖 Erfolgreich mit KI-System geparst!');
-    }
-    
-    if (qrCodeData) {
-      invoice.qrCode = qrCodeData;
-    }
-    if (qrCodeParsed) {
-      invoice.qrCodeParsed = qrCodeParsed;
-    }
-
-    const validation = validateInvoice(invoice);
+    const result = await parsePdfFile(req.file);
 
     res.json({
       success: true,
-      filename: req.file.originalname,
-      pdfBase64: pdfBase64,
-      pdfText: text.substring(0, 1000),
-      invoice,
-      validation
+      ...result
     });
   } catch (error) {
     console.error('Fehler beim PDF-Parsing:', error);
     res.status(500).json({ 
       error: 'Fehler beim Verarbeiten der PDF-Datei',
       details: error.message 
+    });
+  }
+});
+
+// Batch PDF Upload
+app.post('/api/upload-batch', upload.array('pdfs', 20), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Keine PDF-Dateien hochgeladen' });
+    }
+
+    const results = await Promise.all(req.files.map(async (file) => {
+      try {
+        const result = await parsePdfFile(file);
+        return { success: true, ...result };
+      } catch (error) {
+        console.error('Fehler beim PDF-Parsing (Batch):', error);
+        return {
+          success: false,
+          filename: file.originalname,
+          error: error.message
+        };
+      }
+    }));
+
+    res.json({
+      success: true,
+      count: results.length,
+      results
+    });
+  } catch (error) {
+    console.error('Fehler beim Batch-Upload:', error);
+    res.status(500).json({
+      error: 'Fehler beim Verarbeiten der Batch-PDFs',
+      details: error.message
     });
   }
 });
@@ -739,6 +781,7 @@ app.get('/api/status', (req, res) => {
     },
     endpoints: {
       upload: 'POST /api/upload',
+      uploadBatch: 'POST /api/upload-batch',
       validate: 'POST /api/validate',
       health: 'GET /api/health',
       status: 'GET /api/status'
@@ -751,6 +794,7 @@ console.log('📌 Server wird gestartet...');
 app.listen(PORT, () => {
   console.log(`🚀 Rechnungsprüfer läuft auf http://localhost:${PORT}`);
   console.log(`📄 PDF-Upload: POST /api/upload`);
+  console.log(`📦 Batch-Upload: POST /api/upload-batch`);
   console.log(`✓ Manuelle Validierung: POST /api/validate`);
   console.log(`🔍 Status: GET /api/status`);
 });
