@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rechnungsprüfer CHF</title>
     <style>
+        :root {
+            --bg: #f5f7ff;
+            --primary: #667eea;
+            --primary-dark: #5a6fe0;
+            --accent: #764ba2;
+            --success: #28a745;
+            --success-dark: #218838;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --text: #1f2a44;
+            --muted: #6c757d;
+            --card: #ffffff;
+            --border: #e6e9f2;
+            --shadow: 0 16px 40px rgba(31, 42, 68, 0.12);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,24 +29,26 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #eef1ff 0%, #f7f0ff 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 28px;
+            color: var(--text);
         }
 
         .container {
-            max-width: 900px;
+            max-width: 980px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
             overflow: hidden;
+            border: 1px solid var(--border);
         }
 
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
-            padding: 40px 20px;
+            padding: 44px 24px;
             text-align: center;
         }
 
@@ -39,10 +57,7 @@
             margin-bottom: 10px;
         }
 
-        header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
+        header p { font-size: 1.1em; opacity: 0.92; }
 
         .version-badge {
             display: inline-block;
@@ -58,21 +73,45 @@
 
         main {
             padding: 40px;
+            background: #f8f9fc;
         }
 
         .upload-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 30px;
+            background: var(--card);
+            border-radius: 14px;
+            padding: 32px;
             margin-bottom: 30px;
-            border: 2px dashed #667eea;
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 24px rgba(31, 42, 68, 0.08);
             text-align: center;
+            position: relative;
+        }
+
+        .upload-section.dragover {
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 16px 30px rgba(102, 126, 234, 0.18);
+            background: #f2f5ff;
+        }
+
+        .upload-section::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            border: 2px dashed rgba(102, 126, 234, 0.35);
+            pointer-events: none;
         }
 
         .upload-section h2 {
-            color: #333;
+            color: var(--text);
             margin-bottom: 20px;
             font-size: 1.5em;
+        }
+
+        .upload-hint {
+            color: var(--muted);
+            font-size: 0.95em;
+            margin-bottom: 18px;
         }
 
         .file-input-wrapper {
@@ -88,21 +127,23 @@
 
         .file-input-label {
             display: inline-block;
-            padding: 12px 24px;
-            background: #667eea;
+            padding: 12px 26px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            transition: background 0.3s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
         }
 
         .file-input-label:hover {
-            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.35);
         }
 
         #fileInfo {
-            color: #666;
+            color: var(--muted);
             font-size: 0.9em;
             margin: 15px 0;
             min-height: 20px;
@@ -110,19 +151,22 @@
 
         .upload-btn {
             padding: 12px 32px;
-            background: #28a745;
+            background: var(--success);
             color: white;
             border: none;
             border-radius: 6px;
             font-size: 1em;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
             display: inline-block;
+            box-shadow: 0 8px 16px rgba(40, 167, 69, 0.28);
         }
 
         .upload-btn:hover {
-            background: #218838;
+            background: var(--success-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 20px rgba(40, 167, 69, 0.3);
         }
 
         .upload-btn:disabled {
@@ -132,9 +176,9 @@
 
         #progressBar {
             width: 100%;
-            height: 24px;
-            background: #e9ecef;
-            border-radius: 12px;
+            height: 16px;
+            background: #edf0f7;
+            border-radius: 999px;
             margin: 20px 0;
             overflow: hidden;
             display: none;
@@ -156,12 +200,24 @@
         .results-section {
             margin-top: 30px;
             display: none;
+            background: var(--card);
+            border-radius: 14px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 24px rgba(31, 42, 68, 0.08);
         }
 
         .results-section h3 {
-            color: #333;
+            color: var(--text);
             margin-bottom: 15px;
             font-size: 1.3em;
+        }
+
+        .results-section h4 {
+            color: var(--text);
+            margin-top: 18px;
+            margin-bottom: 10px;
+            font-size: 1.05em;
         }
 
         .status-badge {
@@ -174,21 +230,21 @@
         }
 
         .status-badge.success {
-            background: #d4edda;
+            background: rgba(40, 167, 69, 0.15);
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border: 1px solid rgba(40, 167, 69, 0.2);
         }
 
         .status-badge.error {
-            background: #f8d7da;
+            background: rgba(220, 53, 69, 0.15);
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border: 1px solid rgba(220, 53, 69, 0.2);
         }
 
         .status-badge.warning {
-            background: #fff3cd;
+            background: rgba(255, 193, 7, 0.2);
             color: #856404;
-            border: 1px solid #ffeeba;
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
         .info-table {
@@ -196,13 +252,13 @@
             border-collapse: collapse;
             margin: 15px 0;
             background: white;
-            border-radius: 6px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 16px rgba(31, 42, 68, 0.08);
         }
 
         .info-table th {
-            background: #f8f9fa;
+            background: #f4f6fb;
             padding: 12px;
             text-align: left;
             font-weight: 600;
@@ -219,6 +275,10 @@
             background: #f8f9fa;
         }
 
+        .info-table tr:nth-child(even) {
+            background: #fbfcff;
+        }
+
         .error-list, .warning-list, .check-list {
             margin: 15px 0;
         }
@@ -227,8 +287,9 @@
             padding: 10px 15px;
             margin: 8px 0;
             border-left: 4px solid;
-            border-radius: 4px;
-            background: #f8f9fa;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 4px 10px rgba(31, 42, 68, 0.06);
         }
 
         .error-item {
@@ -247,10 +308,11 @@
         }
 
         .pdf-preview {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
+            margin: 24px 0 10px;
+            padding: 16px;
+            background: #f6f7fb;
+            border-radius: 10px;
+            border: 1px solid var(--border);
         }
 
         .pdf-preview h4 {
@@ -263,19 +325,21 @@
             height: 70vh;
             min-height: 520px;
             max-height: 900px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
+            border: 1px solid #dfe3ef;
+            border-radius: 8px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02);
         }
 
         .loading {
             display: none;
             text-align: center;
             padding: 20px;
+            color: var(--muted);
         }
 
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -289,12 +353,12 @@
         }
 
         .error-message {
-            background: #f8d7da;
+            background: rgba(220, 53, 69, 0.12);
             color: #721c24;
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 10px;
             margin: 15px 0;
-            border: 1px solid #f5c6cb;
+            border: 1px solid rgba(220, 53, 69, 0.2);
             display: none;
         }
 
@@ -320,6 +384,11 @@
                 min-height: 360px;
                 max-height: 650px;
             }
+
+            .upload-section,
+            .results-section {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -334,6 +403,7 @@
         <main>
             <div class="upload-section">
                 <h2>📄 PDF hochladen</h2>
+                <p class="upload-hint">Ziehe eine PDF hierher oder wähle eine Datei aus.</p>
                 <div class="file-input-wrapper">
                     <input type="file" id="pdfFile" accept=".pdf" />
                     <label for="pdfFile" class="file-input-label">📁 PDF auswählen</label>
@@ -426,6 +496,7 @@
         const progressBar = document.getElementById('progressBar');
         const progressFill = document.getElementById('progressFill');
         const appVersion = document.getElementById('appVersion');
+        const uploadSection = document.querySelector('.upload-section');
 
         fetch('/api/status')
             .then(res => res.json())
@@ -439,14 +510,46 @@
                 appVersion.textContent = 'unbekannt';
             });
 
-        pdfFile.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                fileInfo.textContent = `✓ ${e.target.files[0].name} (${(e.target.files[0].size / 1024).toFixed(2)} KB)`;
+        function updateFileInfo(files) {
+            if (files.length > 0) {
+                fileInfo.textContent = `✓ ${files[0].name} (${(files[0].size / 1024).toFixed(2)} KB)`;
                 uploadBtn.disabled = false;
             } else {
                 fileInfo.textContent = '';
                 uploadBtn.disabled = true;
             }
+        }
+
+        pdfFile.addEventListener('change', (e) => {
+            updateFileInfo(Array.from(e.target.files));
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                uploadSection.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                uploadSection.classList.remove('dragover');
+            });
+        });
+
+        uploadSection.addEventListener('drop', (event) => {
+            const files = Array.from(event.dataTransfer.files || []).filter(file => file.type === 'application/pdf');
+            if (files.length === 0) {
+                showError('Bitte nur PDF-Dateien ablegen.');
+                return;
+            }
+            const dataTransfer = new DataTransfer();
+            files.forEach(file => dataTransfer.items.add(file));
+            pdfFile.files = dataTransfer.files;
+            updateFileInfo(files);
         });
 
         uploadBtn.addEventListener('click', async () => {
