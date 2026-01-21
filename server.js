@@ -9,6 +9,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const aiModule = require('./ai-module');
+const { version: APP_VERSION } = require('./package.json');
 
 // AI-Hybrid-System initialisieren
 console.log('📌 AI-Hybrid-System wird initialisiert...');
@@ -411,7 +412,7 @@ app.get('/api/health', (req, res) => {
             
             <div class="info-card">
                 <div class="info-label">Version</div>
-                <div class="info-value">1.1.0</div>
+              <div class="info-value">${APP_VERSION}</div>
             </div>
             
             <div class="info-card">
@@ -604,7 +605,7 @@ app.get('/status', (req, res) => {
                 
                 <div class="status-card">
                     <div class="status-label">Version</div>
-                    <div class="status-value">1.1.0</div>
+                  <div class="status-value">${APP_VERSION}</div>
                 </div>
                 
                 <div class="status-card">
@@ -707,7 +708,7 @@ app.get('/api/status', (req, res) => {
   
   res.json({ 
     application: 'Rechnungsprüfer CHF',
-    version: '1.1.0',
+    version: APP_VERSION,
     status: 'online',
     uptime: `${hours}h ${minutes}m ${seconds}s`,
     uptimeSeconds: uptime,

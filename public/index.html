@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rechnungsprüfer CHF - V1.1.0</title>
+    <title>Rechnungsprüfer CHF</title>
     <style>
         * {
             margin: 0;
@@ -42,6 +42,18 @@
         header p {
             font-size: 1.1em;
             opacity: 0.9;
+        }
+
+        .version-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 0.9em;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         main {
@@ -316,6 +328,7 @@
         <header>
             <h1>🇨🇭 Rechnungsprüfer CHF</h1>
             <p>Automatische Rechnungsprüfung mit AI-Unterstützung</p>
+            <div class="version-badge">Version <span id="appVersion">--</span></div>
         </header>
 
         <main>
@@ -412,6 +425,19 @@
         const errorMessage = document.getElementById('errorMessage');
         const progressBar = document.getElementById('progressBar');
         const progressFill = document.getElementById('progressFill');
+        const appVersion = document.getElementById('appVersion');
+
+        fetch('/api/status')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.version) {
+                    appVersion.textContent = data.version;
+                    document.title = `Rechnungsprüfer CHF - v${data.version}`;
+                }
+            })
+            .catch(() => {
+                appVersion.textContent = 'unbekannt';
+            });
 
         pdfFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
