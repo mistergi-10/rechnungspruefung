@@ -31,5 +31,6 @@ Thumbs.db
 dist/
 build/
 
-# Models
+# Large model artifacts and docker build context
 models/
+docker/
