@@ -622,6 +622,18 @@ app.get('/status', (req, res) => {
             padding-top: 20px;
             border-top: 1px solid #eee;
         }
+          .page-nav {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 18px;
+          }
+          .page-nav a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px solid #667eea;
+          }
         @media (max-width: 600px) {
             main { padding: 20px; }
             .status-grid { grid-template-columns: 1fr; }
@@ -634,6 +646,9 @@ app.get('/status', (req, res) => {
         <header>
             <h1>🚀 Rechnungsprüfer CHF - Status</h1>
             <p>Echtzeit Überwachung</p>
+            <nav class="page-nav" aria-label="Seitennavigation">
+              <a href="/">Zur Rechnungsprüfung</a>
+            </nav>
         </header>
         
         <main>

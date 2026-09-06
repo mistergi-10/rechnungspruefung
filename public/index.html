@@ -56,6 +56,20 @@
             letter-spacing: 0.3px;
         }
 
+        .page-nav {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .page-nav a {
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
         main {
             padding: 40px;
         }
@@ -389,6 +403,9 @@
             <h1>🇨🇭 Rechnungsprüfer CHF</h1>
             <p>Automatische Rechnungsprüfung mit AI-Unterstützung</p>
             <div class="version-badge">Version <span id="appVersion">--</span></div>
+            <nav class="page-nav" aria-label="Seitennavigation">
+                <a href="/status">Systemstatus</a>
+            </nav>
         </header>
 
         <main>

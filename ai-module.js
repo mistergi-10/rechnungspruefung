@@ -9,6 +9,7 @@ const http = require('http');
 let openaiAvailable = false;
 let ollamaAvailable = false;
 let openai = null;
+const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:8b';
 
 // OpenAI Initialisierung
 function initOpenAI() {
@@ -41,13 +42,29 @@ async function checkOllamaAvailability() {
     };
 
     const req = http.request(options, (res) => {
-      if (res.statusCode === 200) {
-        console.log('✅ Ollama (lokal) verfügbar - Apple Silicon GPU wird genutzt');
-        ollamaAvailable = true;
-        resolve(true);
-      } else {
-        resolve(false);
-      }
+      let responseData = '';
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            const models = JSON.parse(responseData).models || [];
+            ollamaAvailable = models.some((model) => model.name === ollamaModel);
+            if (ollamaAvailable) {
+              console.log(`✅ Ollama (lokal) verfügbar - Modell: ${ollamaModel}`);
+            } else {
+              console.warn(`⚠️ Ollama läuft, aber Modell nicht installiert: ${ollamaModel}`);
+            }
+            resolve(ollamaAvailable);
+          } catch (error) {
+            resolve(false);
+          }
+        } else {
+          resolve(false);
+        }
+      });
     });
 
     req.on('error', () => {
@@ -59,7 +76,7 @@ async function checkOllamaAvailability() {
 }
 
 // Ollama API aufrufen
-async function callOllama(prompt, model = 'mistral') {
+async function callOllama(prompt, model = ollamaModel) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
       model: model,
@@ -74,7 +91,7 @@ async function callOllama(prompt, model = 'mistral') {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': data.length
+        'Content-Length': Buffer.byteLength(data, 'utf8')
       },
       timeout: 60000
     };
@@ -164,16 +181,16 @@ Antworte NUR mit gültigem JSON (keine weiteren Erklärungen):
   // 2. Fallback auf Ollama (lokal)
   if (ollamaAvailable) {
     try {
-      console.log('🔄 Versuche Ollama (lokal, Apple Silicon)...');
-      const response = await callOllama(prompt, 'mistral');
+      console.log(`🔄 Versuche Ollama (lokal, ${ollamaModel})...`);
+      const response = await callOllama(prompt, ollamaModel);
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        console.log('✅ Ollama erfolgreich - Mistral (lokal)');
+        console.log(`✅ Ollama erfolgreich - ${ollamaModel} (lokal)`);
         return {
           ...parsed,
-          aiEngine: 'Ollama Mistral (Apple Silicon)',
+          aiEngine: `Ollama ${ollamaModel}`,
           summeNetto: parseFloat(parsed.summeNetto) || null,
           summeMwSt: parseFloat(parsed.summeMwSt) || null,
           summeBrutto: parseFloat(parsed.summeBrutto) || null,
@@ -238,13 +255,13 @@ Antworte als JSON:
   if (ollamaAvailable) {
     try {
       console.log('🔄 Versuche Ollama QR-Code-Parsing...');
-      const response = await callOllama(prompt, 'mistral');
+      const response = await callOllama(prompt, ollamaModel);
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         console.log('✅ Ollama QR-Code erfolgreich');
-        return { ...parsed, aiEngine: 'Ollama Mistral' };
+        return { ...parsed, aiEngine: `Ollama ${ollamaModel}` };
       }
     } catch (error) {
       console.warn('⚠️ Ollama QR-Code fehlgeschlagen:', error.message);
@@ -259,7 +276,7 @@ Antworte als JSON:
 function getAIStatus() {
   return {
     openai: openaiAvailable ? 'Verfügbar (Cloud)' : 'Nicht verfügbar',
-    ollama: ollamaAvailable ? 'Verfügbar (Apple Silicon lokal)' : 'Nicht verfügbar',
+    ollama: ollamaAvailable ? `Verfügbar (lokal: ${ollamaModel})` : `Nicht verfügbar (Modell: ${ollamaModel})`,
     fallback: 'Regex (immer verfügbar)',
     activeMode: openaiAvailable ? 'OpenAI (primär)' : ollamaAvailable ? 'Ollama (lokal)' : 'Regex (Fallback)'
   };
