@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #152b3d 0%, #24485a 52%, #d94f45 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -28,10 +28,21 @@
         }
 
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #173447 0%, #286276 100%);
             color: white;
             padding: 40px 20px;
             text-align: center;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            bottom: 0;
+            height: 4px;
+            background: #ef6a5b;
         }
 
         header h1 {
@@ -72,21 +83,60 @@
 
         main {
             padding: 40px;
+            background: #f5f7f8;
         }
 
         .upload-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 30px;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 32px;
             margin-bottom: 30px;
-            border: 2px dashed #667eea;
+            border: 1px solid #d9e2e6;
             text-align: center;
+            box-shadow: 0 12px 30px rgba(23, 52, 71, 0.1);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .upload-section.dragover {
+            border-color: #ef6a5b;
+            box-shadow: 0 16px 34px rgba(217, 79, 69, 0.2);
+            transform: translateY(-2px);
         }
 
         .upload-section h2 {
-            color: #333;
-            margin-bottom: 20px;
+            color: #173447;
+            margin-bottom: 8px;
             font-size: 1.5em;
+        }
+
+        .upload-subtitle {
+            color: #607783;
+            margin-bottom: 24px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #b9cbd2;
+            border-radius: 12px;
+            padding: 24px 18px;
+            background: #f8fbfc;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dragover .drop-zone {
+            border-color: #ef6a5b;
+            background: #fff5f2;
+        }
+
+        .drop-icon {
+            color: #ef6a5b;
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .drop-hint {
+            color: #607783;
+            font-size: 0.9em;
+            margin-top: 10px;
         }
 
         .file-input-wrapper {
@@ -103,7 +153,7 @@
         .file-input-label {
             display: inline-block;
             padding: 12px 24px;
-            background: #667eea;
+            background: #ef6a5b;
             color: white;
             border-radius: 6px;
             cursor: pointer;
@@ -112,19 +162,63 @@
         }
 
         .file-input-label:hover {
-            background: #764ba2;
+            background: #d94f45;
         }
 
         #fileInfo {
-            color: #666;
+            color: #173447;
             font-size: 0.9em;
-            margin: 15px 0;
-            min-height: 20px;
+            margin: 18px 0 10px;
+            min-height: 0;
+        }
+
+        .file-queue {
+            display: grid;
+            gap: 8px;
+            margin: 12px auto 20px;
+            max-width: 680px;
+            text-align: left;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #f5f8f9;
+            border: 1px solid #d9e2e6;
+            border-radius: 7px;
+            color: #173447;
+        }
+
+        .queue-item span:first-child {
+            color: #ef6a5b;
+            font-weight: 700;
+        }
+
+        .queue-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .queue-size {
+            color: #607783;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .upload-btn {
             padding: 12px 32px;
-            background: #28a745;
+            background: #168a70;
             color: white;
             border: none;
             border-radius: 6px;
@@ -136,13 +230,44 @@
         }
 
         .upload-btn:hover {
-            background: #218838;
+            background: #106b58;
         }
 
         .upload-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
+
+        .secondary-btn {
+            padding: 12px 22px;
+            background: transparent;
+            color: #173447;
+            border: 1px solid #b9cbd2;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .secondary-btn:hover {
+            background: #eef4f6;
+        }
+
+        .ai-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 24px 0 0;
+            padding: 12px 14px;
+            background: #eef6f4;
+            border: 1px solid #c9e3dc;
+            border-radius: 8px;
+            color: #185846;
+            font-size: 0.9em;
+        }
+
+        .ai-strip strong { color: #123e34; }
 
         #progressBar {
             width: 100%;
@@ -170,6 +295,19 @@
         .results-section {
             margin-top: 30px;
             display: none;
+            background: #ffffff;
+            border: 1px solid #d9e2e6;
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 12px 30px rgba(23, 52, 71, 0.08);
+        }
+
+        .results-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .results-section h3 {
@@ -254,7 +392,7 @@
             padding: 6px 10px;
             border: none;
             border-radius: 4px;
-            background: #667eea;
+            background: #286276;
             color: white;
             font-size: 0.85em;
             cursor: pointer;
@@ -349,7 +487,7 @@
 
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #ef6a5b;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -389,6 +527,15 @@
                 padding: 8px;
             }
 
+            .upload-section, .results-section {
+                padding: 20px;
+            }
+
+            .ai-strip {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
             #pdfPreview {
                 height: 55vh;
                 min-height: 360px;
@@ -411,12 +558,25 @@
         <main>
             <div class="upload-section">
                 <h2>📄 PDF hochladen</h2>
-                <div class="file-input-wrapper">
-                    <input type="file" id="pdfFile" accept=".pdf" multiple />
-                    <label for="pdfFile" class="file-input-label">📁 PDFs auswählen</label>
+                <p class="upload-subtitle">Einzelne Rechnung oder bis zu 20 PDFs gemeinsam prüfen.</p>
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-icon">⇧</div>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="pdfFile" accept=".pdf" multiple />
+                        <label for="pdfFile" class="file-input-label">📁 PDFs auswählen</label>
+                    </div>
+                    <p class="drop-hint">Oder Dateien hierher ziehen</p>
                 </div>
                 <div id="fileInfo"></div>
-                <button class="upload-btn" id="uploadBtn" disabled>🚀 Hochladen & Analysieren</button>
+                <div class="file-queue" id="fileQueue"></div>
+                <div class="action-row">
+                    <button class="upload-btn" id="uploadBtn" disabled>🚀 Hochladen & Analysieren</button>
+                    <button class="secondary-btn" id="clearBtn" type="button" disabled>Auswahl leeren</button>
+                </div>
+                <div class="ai-strip" id="aiStrip">
+                    <span>Lokale Analyse</span>
+                    <strong id="aiMode">Status wird geladen...</strong>
+                </div>
                 <div id="progressBar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
@@ -429,7 +589,10 @@
             <div id="errorMessage" class="error-message"></div>
 
             <div class="results-section" id="resultsSection">
-                <h3>✅ Analyse-Ergebnisse</h3>
+                <div class="results-heading">
+                    <h3>✅ Analyse-Ergebnisse</h3>
+                    <button class="secondary-btn" id="newCheckBtn" type="button">Neue Prüfung</button>
+                </div>
 
                 <div class="batch-results" id="batchResults"></div>
 
@@ -507,6 +670,12 @@
         const batchResults = document.getElementById('batchResults');
         const loadingText = document.getElementById('loadingText');
         const appVersion = document.getElementById('appVersion');
+        const dropZone = document.getElementById('dropZone');
+        const fileQueue = document.getElementById('fileQueue');
+        const clearBtn = document.getElementById('clearBtn');
+        const newCheckBtn = document.getElementById('newCheckBtn');
+        const aiMode = document.getElementById('aiMode');
+        let selectedFiles = [];
 
         fetch('/api/status')
             .then(res => res.json())
@@ -515,28 +684,91 @@
                     appVersion.textContent = data.version;
                     document.title = `Rechnungsprüfer CHF - v${data.version}`;
                 }
+                if (data && data.modules && data.modules.aiHybrid) {
+                    aiMode.textContent = data.modules.aiHybrid.activeMode;
+                }
             })
             .catch(() => {
                 appVersion.textContent = 'unbekannt';
+                aiMode.textContent = 'Status nicht verfügbar';
             });
 
-        pdfFile.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) {
-                if (files.length === 1) {
-                    fileInfo.textContent = `✓ ${files[0].name} (${(files[0].size / 1024).toFixed(2)} KB)`;
-                } else {
-                    fileInfo.textContent = `✓ ${files.length} PDFs ausgewählt`;
-                }
-                uploadBtn.disabled = false;
-            } else {
-                fileInfo.textContent = '';
-                uploadBtn.disabled = true;
-            }
+        pdfFile.addEventListener('change', (e) => setSelectedFiles(e.target.files, true));
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropZone.closest('.upload-section').classList.add('dragover');
+            });
         });
 
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropZone.closest('.upload-section').classList.remove('dragover');
+            });
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            setSelectedFiles(event.dataTransfer.files);
+        });
+
+        clearBtn.addEventListener('click', clearSelection);
+        newCheckBtn.addEventListener('click', () => {
+            clearSelection();
+            resultsSection.style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        function setSelectedFiles(fileList, replace = false) {
+            const incomingFiles = Array.from(fileList).filter(file =>
+                file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+            );
+            selectedFiles = [...(replace ? [] : selectedFiles), ...incomingFiles]
+                .filter((file, index, files) => files.findIndex(candidate =>
+                    candidate.name === file.name && candidate.size === file.size
+                ) === index)
+                .slice(0, 20);
+            renderFileQueue();
+        }
+
+        function renderFileQueue() {
+            const count = selectedFiles.length;
+            fileInfo.textContent = count === 0
+                ? ''
+                : `${count} PDF${count === 1 ? '' : 's'} bereit zur Analyse`;
+            uploadBtn.disabled = count === 0;
+            clearBtn.disabled = count === 0;
+            fileQueue.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'queue-item';
+                item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span>`;
+
+                const name = document.createElement('span');
+                name.className = 'queue-name';
+                name.textContent = file.name;
+
+                const size = document.createElement('span');
+                size.className = 'queue-size';
+                size.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+
+                item.append(name, size);
+                fileQueue.appendChild(item);
+            });
+        }
+
+        function clearSelection() {
+            selectedFiles = [];
+            pdfFile.value = '';
+            renderFileQueue();
+            errorMessage.style.display = 'none';
+            progressBar.style.display = 'none';
+        }
+
         uploadBtn.addEventListener('click', async () => {
-            const files = Array.from(pdfFile.files);
+            const files = selectedFiles;
             if (files.length === 0) return;
 
             const formData = new FormData();
