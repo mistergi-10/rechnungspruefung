@@ -1,0 +1,40 @@
+services:
+  tgi:
+    image: tgi-sm120
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tgi-sm120
+    container_name: tgi
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - HF_HOME=/models
+      - CUDA_LAUNCH_BLOCKING=1
+      - DISABLE_FLASH_ATTN=1
+      - FLASH_ATTENTION=0
+      - FLASHINFER_ENABLED=0
+      - ATTENTION_BACKEND=triton
+      - ATTENTION=paged
+      - PREFIX_CACHING=0
+      - PREFILL_CHUNKING=0
+      - MODEL_ID=${MODEL_ID:-TinyLlama/TinyLlama-1.1B-Chat-v1.0}
+      - HUGGINGFACEHUB_API_TOKEN=
+    entrypoint: ["/bin/bash","-lc","for f in /usr/lib/wsl/drivers/*/libcuda.so.1; do ln -sf \"$$f\" /usr/lib/x86_64-linux-gnu/libcuda.so && break; done; exec /tgi-entrypoint.sh \"$$@\""]
+    command: ["--disable-custom-kernels","--cuda-memory-fraction","0.8"]
+    ports:
+      - "8080:80"
+    volumes:
+      - ./models:/models
+    gpus: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    runtime: nvidia
+    shm_size: '1gb'

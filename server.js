@@ -9,7 +9,16 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const aiModule = require('./ai-module');
-const { version: APP_VERSION } = require('./package.json');
+const {
+  extractNumbers,
+  extractQRCodeFromText,
+  parseInvoiceText,
+  validateInvoice,
+  reviewInvoiceBatch
+} = require('./invoice-utils');
+
+const pkg = require('./package.json');
+const VERSION = pkg.version;
 
 // AI-Hybrid-System initialisieren
 console.log('📌 AI-Hybrid-System wird initialisiert...');
@@ -46,12 +55,6 @@ const upload = multer({
 
 console.log('📌 Multer konfiguriert');
 
-// Hilfsfunktion zum Extrahieren von Zahlen aus Text
-function extractNumbers(text) {
-  const matches = text.match(/\d+[.,]\d{2}/g) || [];
-  return matches.map(m => parseFloat(m.replace(',', '.')));
-}
-
 // Invoice Parsing mit Hybrid-System
 async function parseInvoiceWithAI(pdfText) {
   try {
@@ -72,168 +75,8 @@ async function parseQRCodeWithAI(qrCodeText) {
   }
 }
 
-// QR-Code Daten aus Text extrahieren
-function extractQRCodeFromText(text) {
-  const qrPatterns = [
-    /SPC\/[\dA-Za-z\s\/\.\-,\n]*/g,
-    /CH\d{2}\s?[\dA-Z]{1,30}/g,
-    /(?:https?:\/\/[^\s]+)/gi
-  ];
-  
-  for (const pattern of qrPatterns) {
-    const match = text.match(pattern);
-    if (match && match[0]) {
-      console.log('🔍 QR-Code Daten gefunden (Regex)');
-      return match[0].trim();
-    }
-  }
-  return null;
-}
-
-// Fallback Parsing mit Regex
-function parseInvoiceText(text) {
-  const lines = text.split('\n');
-  
-  const invoice = {
-    rechnungsnummer: null,
-    datum: null,
-    lieferant: null,
-    empfaenger: null,
-    positionen: [],
-    summeNetto: null,
-    summeMwSt: null,
-    summeBrutto: null,
-    mwstSatz: 19
-  };
-
-  const rnMatch = text.match(/(?:Rechnungs?nr\.?|Rechnungs?nummer|Invoice\s?No\.?|RN)[:\s]+([A-Z0-9-\/]+)/i);
-  if (rnMatch) invoice.rechnungsnummer = rnMatch[1].trim();
-
-  const dateMatch = text.match(/(?:Datum|Date|Rechnungs?datum)[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{4})/i) || 
-                    text.match(/(\d{1,2}[./-]\d{1,2}[./-]\d{4})/);
-  if (dateMatch) invoice.datum = dateMatch[1];
-
-  const nettoMatch = text.match(/(?:Netto|Subtotal|Summe\s+Netto|Net)[:\s]+([0-9]+[.,][0-9]{2})/i);
-  if (nettoMatch) invoice.summeNetto = parseFloat(nettoMatch[1].replace(',', '.'));
-
-  const mwstMatch = text.match(/(?:MwSt|VAT|Mehrwertsteuer|Steuerbetrag|Tax)[:\s]+([0-9]+[.,][0-9]{2})/i);
-  if (mwstMatch) invoice.summeMwSt = parseFloat(mwstMatch[1].replace(',', '.'));
-
-  const bruttoMatch = text.match(/(?:Brutto|Total|Gesamtbetrag|Grand\s+Total|Amount\s+Due)[:\s]+([0-9]+[.,][0-9]{2})/i);
-  if (bruttoMatch) invoice.summeBrutto = parseFloat(bruttoMatch[1].replace(',', '.'));
-
-  if (!invoice.summeNetto || !invoice.summeMwSt || !invoice.summeBrutto) {
-    const allNumbers = extractNumbers(text);
-    if (allNumbers.length >= 3) {
-      if (!invoice.summeNetto) invoice.summeNetto = allNumbers[allNumbers.length - 3];
-      if (!invoice.summeMwSt) invoice.summeMwSt = allNumbers[allNumbers.length - 2];
-      if (!invoice.summeBrutto) invoice.summeBrutto = allNumbers[allNumbers.length - 1];
-    }
-  }
-
-  const mwstRateMatch = text.match(/(?:MwSt-?Satz|VAT\s+Rate|Steuersatz)[:\s]+(\d{1,2})\s*%/i);
-  if (mwstRateMatch) invoice.mwstSatz = parseInt(mwstRateMatch[1]);
-
-  return invoice;
-}
-
-// Rechnungsprüfung durchführen
-function validateInvoice(invoice) {
-  const errors = [];
-  const warnings = [];
-  const checks = [];
-
-  if (!invoice.rechnungsnummer) {
-    errors.push('Rechnungsnummer nicht gefunden');
-  } else {
-    checks.push({ check: 'Rechnungsnummer', status: 'OK', value: invoice.rechnungsnummer });
-  }
-
-  if (!invoice.datum) {
-    errors.push('Rechnungsdatum nicht gefunden');
-  } else {
-    checks.push({ check: 'Rechnungsdatum', status: 'OK', value: invoice.datum });
-  }
-
-  if (invoice.summeNetto && invoice.summeMwSt && invoice.summeBrutto) {
-    checks.push({ check: 'Summe Netto erkannt', status: 'OK', value: `CHF ${invoice.summeNetto.toFixed(2).replace('.', ',')}` });
-    checks.push({ check: 'Summe MwSt erkannt', status: 'OK', value: `CHF ${invoice.summeMwSt.toFixed(2).replace('.', ',')}` });
-    checks.push({ check: 'Summe Brutto erkannt', status: 'OK', value: `CHF ${invoice.summeBrutto.toFixed(2).replace('.', ',')}` });
-
-    const calculatedMwStRate = (invoice.summeMwSt / invoice.summeNetto) * 100;
-    checks.push({ 
-      check: 'MwSt-Satz', 
-      status: 'OK', 
-      value: `${calculatedMwStRate.toFixed(2)}%` 
-    });
-
-    const calculatedBrutto = invoice.summeNetto + invoice.summeMwSt;
-    const difference = Math.abs(calculatedBrutto - invoice.summeBrutto);
-    
-    if (difference > 0.01) {
-      errors.push(`Summenprüfung fehlgeschlagen: Netto (CHF ${invoice.summeNetto.toFixed(2).replace('.', ',')}) + MwSt (CHF ${invoice.summeMwSt.toFixed(2).replace('.', ',')}) = CHF ${calculatedBrutto.toFixed(2).replace('.', ',')}, aber Brutto = CHF ${invoice.summeBrutto.toFixed(2).replace('.', ',')} (Differenz: CHF ${difference.toFixed(2).replace('.', ',')})`);
-    } else {
-      checks.push({ check: 'Summenprüfung (Netto+MwSt=Brutto)', status: 'OK', value: '✓ Korrekt' });
-    }
-  } else {
-    warnings.push('Nicht alle Summenfelder konnten erkannt werden');
-  }
-
-  if (!invoice.rechnungsnummer || invoice.rechnungsnummer.length < 2) {
-    errors.push('Rechnungsnummer ungültig oder zu kurz');
-  }
-
-  if (invoice.summeNetto && invoice.summeBrutto && invoice.summeNetto > invoice.summeBrutto) {
-    errors.push('Logik-Fehler: Nettosumme darf nicht größer als Bruttosumme sein');
-  }
-
-  return {
-    errors,
-    warnings,
-    checks,
-    isValid: errors.length === 0
-  };
-}
 
 // API Endpoints
-
-async function parsePdfFile(file) {
-  const data = await pdfParse(file.buffer);
-  const text = data.text;
-
-  const pdfBase64 = file.buffer.toString('base64');
-  const qrCodeData = extractQRCodeFromText(text);
-
-  let qrCodeParsed = null;
-  if (qrCodeData) {
-    qrCodeParsed = await parseQRCodeWithAI(qrCodeData);
-  }
-
-  let invoice = await parseInvoiceWithAI(text);
-  if (!invoice) {
-    console.log('⚠️ AI-Parsing fehlgeschlagen, verwende Regex-Fallback...');
-    invoice = parseInvoiceText(text);
-  } else {
-    console.log('🤖 Erfolgreich mit KI-System geparst!');
-  }
-
-  if (qrCodeData) {
-    invoice.qrCode = qrCodeData;
-  }
-  if (qrCodeParsed) {
-    invoice.qrCodeParsed = qrCodeParsed;
-  }
-
-  const validation = validateInvoice(invoice);
-
-  return {
-    filename: file.originalname,
-    pdfBase64: pdfBase64,
-    pdfText: text.substring(0, 1000),
-    invoice,
-    validation
-  };
-}
 
 // PDF hochladen und parsen
 app.post('/api/upload', upload.single('pdf'), async (req, res) => {
@@ -242,52 +85,48 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
       return res.status(400).json({ error: 'Keine PDF-Datei hochgeladen' });
     }
 
-    const result = await parsePdfFile(req.file);
+    const data = await pdfParse(req.file.buffer);
+    const text = data.text;
+    
+    const pdfBase64 = req.file.buffer.toString('base64');
+    const qrCodeData = extractQRCodeFromText(text);
+    
+    let qrCodeParsed = null;
+    if (qrCodeData) {
+      qrCodeParsed = await parseQRCodeWithAI(qrCodeData);
+    }
+
+    let invoice = await parseInvoiceWithAI(text);
+    
+    if (!invoice) {
+      console.log('⚠️ AI-Parsing fehlgeschlagen, verwende Regex-Fallback...');
+      invoice = parseInvoiceText(text);
+    } else {
+      console.log('🤖 Erfolgreich mit KI-System geparst!');
+    }
+    
+    if (qrCodeData) {
+      invoice.qrCode = qrCodeData;
+    }
+    if (qrCodeParsed) {
+      invoice.qrCodeParsed = qrCodeParsed;
+    }
+
+    const validation = validateInvoice(invoice);
 
     res.json({
       success: true,
-      ...result
+      filename: req.file.originalname,
+      pdfBase64: pdfBase64,
+      pdfText: text.substring(0, 1000),
+      invoice,
+      validation
     });
   } catch (error) {
     console.error('Fehler beim PDF-Parsing:', error);
     res.status(500).json({ 
       error: 'Fehler beim Verarbeiten der PDF-Datei',
       details: error.message 
-    });
-  }
-});
-
-// Batch PDF Upload
-app.post('/api/upload-batch', upload.array('pdfs', 20), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Keine PDF-Dateien hochgeladen' });
-    }
-
-    const results = await Promise.all(req.files.map(async (file) => {
-      try {
-        const result = await parsePdfFile(file);
-        return { success: true, ...result };
-      } catch (error) {
-        console.error('Fehler beim PDF-Parsing (Batch):', error);
-        return {
-          success: false,
-          filename: file.originalname,
-          error: error.message
-        };
-      }
-    }));
-
-    res.json({
-      success: true,
-      count: results.length,
-      results
-    });
-  } catch (error) {
-    console.error('Fehler beim Batch-Upload:', error);
-    res.status(500).json({
-      error: 'Fehler beim Verarbeiten der Batch-PDFs',
-      details: error.message
     });
   }
 });
@@ -319,6 +158,19 @@ app.post('/api/validate', (req, res) => {
     res.status(500).json({ 
       error: 'Fehler bei der Validierung',
       details: error.message 
+    });
+  }
+});
+
+// Mehrere bereits extrahierte Rechnungen prüfen und Duplikate markieren
+app.post('/api/batch-validate', (req, res) => {
+  try {
+    const result = reviewInvoiceBatch(req.body && req.body.invoices);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(400).json({
+      error: 'Ungültige Batch-Anfrage',
+      details: error.message
     });
   }
 });
@@ -453,8 +305,8 @@ app.get('/api/health', (req, res) => {
             </div>
             
             <div class="info-card">
-                <div class="info-label">Version</div>
-              <div class="info-value">${APP_VERSION}</div>
+              <div class="info-label">Version</div>
+              <div class="info-value">${VERSION}</div>
             </div>
             
             <div class="info-card">
@@ -646,8 +498,8 @@ app.get('/status', (req, res) => {
                 </div>
                 
                 <div class="status-card">
-                    <div class="status-label">Version</div>
-                  <div class="status-value">${APP_VERSION}</div>
+                  <div class="status-label">Version</div>
+                  <div class="status-value">${VERSION}</div>
                 </div>
                 
                 <div class="status-card">
@@ -749,8 +601,8 @@ app.get('/api/status', (req, res) => {
   const aiStatus = aiModule.getAIStatus();
   
   res.json({ 
-    application: 'Rechnungsprüfer CHF',
-    version: APP_VERSION,
+  application: 'Rechnungsprüfer CHF',
+  version: VERSION,
     status: 'online',
     uptime: `${hours}h ${minutes}m ${seconds}s`,
     uptimeSeconds: uptime,
@@ -781,7 +633,6 @@ app.get('/api/status', (req, res) => {
     },
     endpoints: {
       upload: 'POST /api/upload',
-      uploadBatch: 'POST /api/upload-batch',
       validate: 'POST /api/validate',
       health: 'GET /api/health',
       status: 'GET /api/status'
@@ -794,7 +645,6 @@ console.log('📌 Server wird gestartet...');
 app.listen(PORT, () => {
   console.log(`🚀 Rechnungsprüfer läuft auf http://localhost:${PORT}`);
   console.log(`📄 PDF-Upload: POST /api/upload`);
-  console.log(`📦 Batch-Upload: POST /api/upload-batch`);
   console.log(`✓ Manuelle Validierung: POST /api/validate`);
   console.log(`🔍 Status: GET /api/status`);
 });

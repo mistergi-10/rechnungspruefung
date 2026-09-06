@@ -1,5 +1,6 @@
 # Sensitive Environment Variables
 .env
+.env.local
 
 # Dependencies
 node_modules/
@@ -33,3 +34,5 @@ build/
 # Large model artifacts and docker build context
 models/
 docker/
+.local-test-release-*/
+package-lock 2.json
